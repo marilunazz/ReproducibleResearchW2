@@ -1,0 +1,71 @@
+## Read the Data
+``` {r}
+activityData <- read.csv("activity.csv")
+````
+
+## What is mean total number of steps taken per day?
+``` {r}
+totSteps <- sum(activityData$steps, na.rm= TRUE)
+totSteps
+totStepsDay <- aggregate(steps ~ date, activityData, FUN=sum)
+hist(totStepsDay$steps, xlab = "Number of Steps", main = "Total Steps per Day" )
+meanSteps <- mean(totStepsDay$steps, na.rm = TRUE)
+medianSteps <- median(totStepsDay$steps, na.rm = TRUE)
+meanSteps
+medianSteps
+````
+
+## What is the average daily activity pattern?
+```{r}
+fiveMinAvg <- aggregate(steps ~ interval, activityData, FUN = mean, na.rm = TRUE)
+plot(fiveMinAvg$interval, fiveMinAvg$steps, type = "l", xlab = "5 minute Interval", ylab = "Average Number of Steps")
+maxInt <- fiveMinAvg[which.max(fiveMinAvg$steps),]
+maxInt
+````
+
+## Imputing Missing Values
+```{r}
+#sum the total na
+totNA <- sum(is.na(activityData$steps))
+totNA
+#Find the na positions
+na_pos <- which(is.na(activityData$steps))
+#Create a vector of means
+mean_vec <- rep(mean(activityData$steps, na.rm=TRUE), times=length(na_pos))
+#Replace the nas by the means
+activityData[na_pos, "steps"] <- mean_vec
+totSteps <- sum(activityData$steps, na.rm= TRUE)
+totStepsDay <- aggregate(steps ~ date, activityData, FUN=sum)
+hist(totStepsDay$steps, xlab = "Number of Steps", main = "Total Steps per Day NA's Replaced")
+meanStepsRep <- mean(totStepsDay$steps, na.rm = TRUE)
+medianStepsRep <- median(totStepsDay$steps, na.rm = TRUE)
+diffMean <- meanStepsRep - meanSteps
+diffMedian <- medianStepsRep - medianSteps
+diffMean
+diffMedian
+````
+
+## Are there differences in activity patterns between weekdays and weekends?
+``` {r}
+library(ggplot2)
+DayType <- function(date) {
+     day <- weekdays(date)
+     if (day %in% c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'))
+         return ("weekeday")
+     else if (day %in% c('Saturday', 'Sunday'))
+         return ("weekend")
+     else
+         stop ("Invalid Date Format.")
+}
+activityData$date <- as.Date(activityData$date)
+activityData$day <- sapply(activityData$date, FUN = DayType)
+meanStepsByDay <- aggregate(steps ~ interval + day, activityData, mean)
+ggplot(data = meanStepsByDay, aes(x = interval, y = steps)) + 
+  geom_line() +
+  facet_grid(day ~ .) +
+  ggtitle("Average Daily Activity Pattern") +
+  xlab("5-minute Interval") +
+  ylab("Average Number of Steps") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+`````
